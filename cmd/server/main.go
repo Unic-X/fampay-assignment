@@ -8,13 +8,21 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/Unic-X/fampay-assignment/internal/config"
 	"github.com/Unic-X/fampay-assignment/internal/database"
 	"github.com/Unic-X/fampay-assignment/internal/handler"
 	"github.com/Unic-X/fampay-assignment/internal/service"
 	"github.com/Unic-X/fampay-assignment/internal/youtube"
+	_ "github.com/Unic-X/fampay-assignment/docs"
 )
 
+// @title YouTube Video Fetcher API
+// @version 1.0
+// @description A service that fetches and stores YouTube videos for a given search query
+// @host localhost:8080
+// @BasePath /
 func main() {
 	// Load configuration
 	cfg, err := config.Load()
@@ -46,6 +54,9 @@ func main() {
 
 	// Register routes
 	router.GET("/api/videos", videoHandler.GetVideos)
+
+	// Swagger documentation
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Start server
 	go func() {

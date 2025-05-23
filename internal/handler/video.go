@@ -16,7 +16,17 @@ func NewVideoHandler(db *database.DB) *VideoHandler {
 	return &VideoHandler{db: db}
 }
 
-// GetVideos handles GET /api/videos
+// GetVideos godoc
+// @Summary Get paginated list of videos
+// @Description Get a paginated list of videos sorted by published date in descending order
+// @Tags videos
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Number of items per page (default: 10, max: 50)"
+// @Success 200 {object} database.PaginatedResponse
+// @Failure 500 {object} map[string]string
+// @Router /api/videos [get]
 func (h *VideoHandler) GetVideos(c *gin.Context) {
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page < 1 {

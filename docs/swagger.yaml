@@ -1,0 +1,74 @@
+basePath: /
+definitions:
+  github_com_Unic-X_fampay-assignment_internal_database.PaginatedResponse:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+      videos:
+        items:
+          $ref: '#/definitions/github_com_Unic-X_fampay-assignment_internal_database.Video'
+        type: array
+    type: object
+  github_com_Unic-X_fampay-assignment_internal_database.Video:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      published_at:
+        type: string
+      thumbnail_url:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: A service that fetches and stores YouTube videos for a given search
+    query
+  title: YouTube Video Fetcher API
+  version: "1.0"
+paths:
+  /api/videos:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of videos sorted by published date in descending
+        order
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Number of items per page (default: 10, max: 50)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_Unic-X_fampay-assignment_internal_database.PaginatedResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get paginated list of videos
+      tags:
+      - videos
+swagger: "2.0"
