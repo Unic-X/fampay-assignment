@@ -2,99 +2,56 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 )
 
 // Config holds all configuration for the application
 type Config struct {
-	Database DatabaseConfig
-	YouTube  YouTubeConfig
-	Server   ServerConfig
-}
-
-// DatabaseConfig holds database configuration
-type DatabaseConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
-}
-
-// YouTubeConfig holds YouTube API configuration
-type YouTubeConfig struct {
-	APIKeys       []string
-	SearchQuery   string
-	FetchInterval time.Duration
-}
-
-// ServerConfig holds server configuration
-type ServerConfig struct {
-	Port string
+	DBHost         string
+	DBPort         string
+	DBUser         string
+	DBPassword     string
+	DBName         string
+	YouTubeAPIKeys []string
+	SearchQuery    string
+	ServerPort     string
 }
 
 // Load loads configuration from environment variables
-func Load() *Config {
-	// Load .env file if it exists
+func Load() (*Config, error) {
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using environment variables")
+		logrus.Warn("Error loading .env file, using environment variables")
 	}
 
-	dbPort, err := strconv.Atoi(getEnv("DB_PORT", "5432"))
-	if err != nil {
-		log.Fatal("Invalid DB_PORT value")
+	config := &Config{
+		DBHost:         getEnv("DB_HOST", "localhost"),
+		DBPort:         getEnv("DB_PORT", "5432"),
+		DBUser:         getEnv("DB_USER", "postgres"),
+		DBPassword:     getEnv("DB_PASSWORD", ""),
+		DBName:         getEnv("DB_NAME", "youtube_videos"),
+		YouTubeAPIKeys: strings.Split(getEnv("YOUTUBE_API_KEYS", ""), ","),
+		SearchQuery:    getEnv("SEARCH_QUERY", "cricket"),
+		ServerPort:     getEnv("SERVER_PORT", "8080"),
 	}
 
-	fetchInterval, err := time.ParseDuration(getEnv("FETCH_INTERVAL", "10s"))
-	if err != nil {
-		log.Fatal("Invalid FETCH_INTERVAL value")
-	}
-
-	apiKeysStr := getEnv("YOUTUBE_API_KEYS", "")
-	if apiKeysStr == "" {
-		log.Fatal("YOUTUBE_API_KEYS environment variable is required")
-	}
-
-	apiKeys := strings.Split(apiKeysStr, ",")
-	for i, key := range apiKeys {
-		apiKeys[i] = strings.TrimSpace(key)
-	}
-
-	return &Config{
-		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     dbPort,
-			User:     getEnv("DB_USER", "postgres"),
-			Password: getEnv("DB_PASSWORD", ""),
-			DBName:   getEnv("DB_NAME", "youtube_api"),
-		},
-		YouTube: YouTubeConfig{
-			APIKeys:       apiKeys,
-			SearchQuery:   getEnv("SEARCH_QUERY", "football"),
-			FetchInterval: fetchInterval,
-		},
-		Server: ServerConfig{
-			Port: getEnv("PORT", "8080"),
-		},
-	}
+	return config, nil
 }
 
 // getEnv gets environment variable with fallback
-func getEnv(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
 	}
-	return fallback
+	return value
 }
 
 // GetDatabaseURL returns database connection URL
 func (c *Config) GetDatabaseURL() string {
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		c.Database.Host, c.Database.Port, c.Database.User, c.Database.Password, c.Database.DBName)
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		c.DBHost, c.DBPort, c.DBUser, c.DBPassword, c.DBName)
 }

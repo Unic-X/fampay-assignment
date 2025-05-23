@@ -1,0 +1,100 @@
+package youtube
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	_ "github.com/Unic-X/fampay-assignment/internal/database"
+
+	"github.com/sirupsen/logrus"
+	"google.golang.org/api/option"
+	"google.golang.org/api/youtube/v3"
+)
+
+// Video represents a YouTube video in our application
+type Video struct {
+	ID           string    `json:"id"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	PublishedAt  time.Time `json:"published_at"`
+	ThumbnailURL string    `json:"thumbnail_url"`
+}
+
+type Client struct {
+	service     *youtube.Service
+	apiKeys     []string
+	currentKey  int
+	searchQuery string
+}
+
+func New(apiKeys []string, searchQuery string) (*Client, error) {
+	if len(apiKeys) == 0 {
+		return nil, fmt.Errorf("no API keys provided")
+	}
+
+	service, err := youtube.NewService(context.Background(), option.WithAPIKey(apiKeys[0]))
+	if err != nil {
+		return nil, fmt.Errorf("error creating YouTube service: %v", err)
+	}
+
+	return &Client{
+		service:     service,
+		apiKeys:     apiKeys,
+		currentKey:  0,
+		searchQuery: searchQuery,
+	}, nil
+}
+
+func (c *Client) FetchLatestVideos() ([]Video, error) {
+	publishedAfter := time.Now().Add(-24 * time.Hour).Format(time.RFC3339)
+
+	call := c.service.Search.List([]string{"snippet"}).
+		Q(c.searchQuery).
+		Type("video").
+		Order("date").
+		MaxResults(50).
+		PublishedAfter(publishedAfter)
+
+	response, err := call.Do()
+	if err != nil {
+		// If quota exceeded, try next API key
+		if err.Error() == "quotaExceeded" {
+			return c.retryWithNextKey()
+		}
+		return nil, fmt.Errorf("error fetching videos: %v", err)
+	}
+
+	var videos []Video
+	for _, item := range response.Items {
+		publishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
+		if err != nil {
+			logrus.Warnf("Error parsing published date for video %s: %v", item.Id.VideoId, err)
+			continue
+		}
+
+		video := Video{
+			ID:           item.Id.VideoId,
+			Title:        item.Snippet.Title,
+			Description:  item.Snippet.Description,
+			PublishedAt:  publishedAt,
+			ThumbnailURL: item.Snippet.Thumbnails.Default.Url,
+		}
+		videos = append(videos, video)
+	}
+
+	return videos, nil
+}
+
+func (c *Client) retryWithNextKey() ([]Video, error) {
+	c.currentKey = (c.currentKey + 1) % len(c.apiKeys)
+
+	service, err := youtube.NewService(context.Background(), option.WithAPIKey(c.apiKeys[c.currentKey]))
+	if err != nil {
+		return nil, fmt.Errorf("error creating YouTube service with new key: %v", err)
+	}
+
+	c.service = service
+	return c.FetchLatestVideos()
+}
+
