@@ -55,6 +55,15 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: 'Field to sort by (published_at, title, created_at) (default:
+          published_at)'
+        in: query
+        name: sort_by
+        type: string
+      - description: 'Sort order (asc, desc) (default: desc)'
+        in: query
+        name: sort_order
+        type: string
       produces:
       - application/json
       responses:

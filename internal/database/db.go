@@ -53,8 +53,8 @@ func (db *DB) SaveVideo(video *Video) error {
 	return nil
 }
 
-// GetVideos returns paginated videos sorted by published date
-func (db *DB) GetVideos(page, limit int) (*PaginatedResponse, error) {
+// GetVideos returns paginated videos sorted by the specified field and order
+func (db *DB) GetVideos(page, limit int, sortBy, sortOrder string) (*PaginatedResponse, error) {
 	offset := (page - 1) * limit
 
 	// Get total count
@@ -64,13 +64,13 @@ func (db *DB) GetVideos(page, limit int) (*PaginatedResponse, error) {
 		return nil, fmt.Errorf("error getting total count: %v", err)
 	}
 
-	// Get videos
-	query := `
+	// Build the query with dynamic sorting
+	query := fmt.Sprintf(`
 		SELECT id, title, description, published_at, thumbnail_url, created_at, updated_at
 		FROM videos
-		ORDER BY published_at DESC
+		ORDER BY %s %s
 		LIMIT $1 OFFSET $2
-	`
+	`, sortBy, sortOrder)
 
 	rows, err := db.Query(query, limit, offset)
 	if err != nil {

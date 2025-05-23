@@ -40,6 +40,18 @@ const docTemplate = `{
                         "description": "Number of items per page (default: 10, max: 50)",
                         "name": "limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Field to sort by (published_at, title, created_at) (default: published_at)",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort order (asc, desc) (default: desc)",
+                        "name": "sort_order",
+                        "in": "query"
                     }
                 ],
                 "responses": {
