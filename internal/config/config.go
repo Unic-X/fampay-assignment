@@ -37,7 +37,7 @@ func Load() (*Config, error) {
 		SearchQuery:    getEnv("SEARCH_QUERY", "cricket"),
 		ServerPort:     getEnv("SERVER_PORT", "8080"),
 	}
-
+	fmt.Println(config);
 	return config, nil
 }
 

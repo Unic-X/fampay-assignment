@@ -3,11 +3,12 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/Unic-X/fampay-assignment/internal/config"
+
 	_ "github.com/lib/pq"
 )
 
@@ -27,7 +28,7 @@ func main() {
 
 	// Read migration file
 	migrationPath := filepath.Join("migrations", "001_create_videos_table.sql")
-	migrationSQL, err := ioutil.ReadFile(migrationPath)
+	migrationSQL, err := os.ReadFile(migrationPath)
 	if err != nil {
 		log.Fatalf("Error reading migration file: %v", err)
 	}
@@ -40,4 +41,3 @@ func main() {
 
 	fmt.Println("Migration completed successfully")
 }
-

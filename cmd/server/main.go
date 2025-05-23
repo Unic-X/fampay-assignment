@@ -7,15 +7,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "github.com/Unic-X/fampay-assignment/docs"
 	"github.com/Unic-X/fampay-assignment/internal/config"
 	"github.com/Unic-X/fampay-assignment/internal/database"
 	"github.com/Unic-X/fampay-assignment/internal/handler"
 	"github.com/Unic-X/fampay-assignment/internal/service"
 	"github.com/Unic-X/fampay-assignment/internal/youtube"
-	_ "github.com/Unic-X/fampay-assignment/docs"
+
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // @title YouTube Video Fetcher API
@@ -44,7 +45,7 @@ func main() {
 	}
 
 	// Initialize video fetcher service
-	fetcher := service.NewFetcher(youtubeClient, db, 10*time.Second)
+	fetcher := service.NewFetcher(youtubeClient, db, 10*time.Second) // Fetcher with 10s of fetching time
 	go fetcher.Start()
 	defer fetcher.Stop()
 
@@ -71,4 +72,5 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down server...")
-} 
+}
+

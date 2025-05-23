@@ -3,6 +3,7 @@ package youtube
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "github.com/Unic-X/fampay-assignment/internal/database"
@@ -58,8 +59,8 @@ func (c *Client) FetchLatestVideos() ([]Video, error) {
 
 	response, err := call.Do()
 	if err != nil {
-		// If quota exceeded, try next API key
-		if err.Error() == "quotaExceeded" {
+		if strings.Contains(err.Error(), "quotaExceeded") {
+			logrus.Warnf("Quota exceeded for API key %d, trying next key", c.currentKey)
 			return c.retryWithNextKey()
 		}
 		return nil, fmt.Errorf("error fetching videos: %v", err)
@@ -89,6 +90,12 @@ func (c *Client) FetchLatestVideos() ([]Video, error) {
 func (c *Client) retryWithNextKey() ([]Video, error) {
 	c.currentKey = (c.currentKey + 1) % len(c.apiKeys)
 
+	if c.currentKey == 0 {
+		return nil, fmt.Errorf("all API keys have exceeded their quota")
+	}
+
+	logrus.Infof("Switching to API key %d", c.currentKey)
+
 	service, err := youtube.NewService(context.Background(), option.WithAPIKey(c.apiKeys[c.currentKey]))
 	if err != nil {
 		return nil, fmt.Errorf("error creating YouTube service with new key: %v", err)
@@ -97,4 +104,3 @@ func (c *Client) retryWithNextKey() ([]Video, error) {
 	c.service = service
 	return c.FetchLatestVideos()
 }
-
