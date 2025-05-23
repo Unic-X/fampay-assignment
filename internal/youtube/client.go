@@ -48,17 +48,18 @@ func New(apiKeys []string, searchQuery string) (*Client, error) {
 }
 
 func (c *Client) FetchLatestVideos() ([]Video, error) {
-	publishedAfter := time.Now().Add(-24 * time.Hour).Format(time.RFC3339)
+	publishedAfter := time.Now().Add(-24 * time.Hour).Format(time.RFC3339) // 24 hours ago
 
 	call := c.service.Search.List([]string{"snippet"}).
 		Q(c.searchQuery).
 		Type("video").
 		Order("date").
-		MaxResults(50).
+		MaxResults(10).
 		PublishedAfter(publishedAfter)
 
 	response, err := call.Do()
 	if err != nil {
+		// Check if the error is due to quota exceeded
 		if strings.Contains(err.Error(), "quotaExceeded") {
 			logrus.Warnf("Quota exceeded for API key %d, trying next key", c.currentKey)
 			return c.retryWithNextKey()
@@ -88,19 +89,22 @@ func (c *Client) FetchLatestVideos() ([]Video, error) {
 }
 
 func (c *Client) retryWithNextKey() ([]Video, error) {
+	// Try the next API key
 	c.currentKey = (c.currentKey + 1) % len(c.apiKeys)
-
+	
+	// If we've tried all keys, return an error
 	if c.currentKey == 0 {
 		return nil, fmt.Errorf("all API keys have exceeded their quota")
 	}
 
 	logrus.Infof("Switching to API key %d", c.currentKey)
-
+	
 	service, err := youtube.NewService(context.Background(), option.WithAPIKey(c.apiKeys[c.currentKey]))
 	if err != nil {
 		return nil, fmt.Errorf("error creating YouTube service with new key: %v", err)
 	}
-
+	
 	c.service = service
 	return c.FetchLatestVideos()
 }
+
